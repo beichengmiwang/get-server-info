@@ -2,6 +2,13 @@
 
 单文件 Go 语言 Linux 服务器硬件巡检工具。采集结果以格式化 ASCII 表格写入 TXT 文件，适用于普通服务器及 NVIDIA GPU 服务器。
 
+当前版本：`v3.1`
+
+## 版本说明
+
+- `v3.1`：新增 YarC 作者信息栏；采集结果同步显示在屏幕并写入 TXT；超长的 `lspci -vvvnn` 与 `nvidia-smi -q` 完整内容仅写入 TXT。
+- `v3.0`：单文件硬件巡检版本，包含格式化硬件信息、SMART 通电时长和默认 CUDA 测试。
+
 ## 采集内容
 
 - 厂商、型号、序列号、BIOS、BMC、操作系统和内核
@@ -12,7 +19,7 @@
 - 网卡 PCIe BDF、链路速率/宽度、固件、端口、MAC、错误和丢包计数
 - NVIDIA GPU 序列号、温度、VBIOS、ECC、PCIe 链路和理论带宽
 - NVLink 状态、CUDA bandwidthTest、CUDA p2pBandwidthLatencyTest
-- IPMI SEL、dmesg 错误、完整 `lspci -vvnn` 和 `nvidia-smi -q`
+- IPMI SEL、dmesg 错误、完整 `lspci -vvvnn` 和 `nvidia-smi -q`
 
 ## 环境要求
 
@@ -61,6 +68,8 @@ sudo ./server_inventory
 ```text
 服务器序列号_YYYYMMDD_HHMMSS.txt
 ```
+
+除 `lspci -vvvnn` 和 `nvidia-smi -q` 的超长明细外，所有采集结果也会在检测完成后同步显示到屏幕；两项超长明细仍会完整保存在 TXT 报告中。
 
 常用参数：
 

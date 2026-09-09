@@ -22,7 +22,10 @@ import (
 	"time"
 )
 
-const line = "----------------------------------------------------------------------------------------------------------------------------------"
+const (
+	line    = "----------------------------------------------------------------------------------------------------------------------------------"
+	version = "v3.1"
+)
 
 type result struct {
 	out  string
@@ -46,6 +49,7 @@ type app struct {
 	nics        []string
 	gpus        []string
 	sectionNo   int
+	screen      bool
 }
 
 func main() {
@@ -63,7 +67,7 @@ func main() {
 		fatal("创建输出目录失败", err)
 	}
 
-	a := &app{timeout: *timeout}
+	a := &app{timeout: *timeout, screen: true}
 	a.collectSummary()
 	if clean(*serial) != "" {
 		a.serial = clean(*serial)
@@ -81,7 +85,6 @@ func main() {
 	}
 	defer a.file.Close()
 
-	fmt.Printf("开始收集系统信息，序列号: %s\n", a.serial)
 	a.writeReport(*cudaTests)
 	fmt.Printf("系统信息收集完成。日志已保存至 %s\n", path)
 }
@@ -117,6 +120,7 @@ func (a *app) collectSummary() {
 }
 
 func (a *app) writeReport(cudaTests bool) {
+	a.header()
 	a.printf("开始收集系统信息，序列号: %s\n", a.serial)
 	a.section("Summary")
 	nvme, sataSSD, sataHDD, sas := 0, 0, 0, 0
@@ -178,9 +182,34 @@ func (a *app) writeReport(cudaTests bool) {
 	a.divide()
 	a.dmesg()
 	a.divide()
-	a.commandSection("Lspci detailed informations", "lspci", "-vvnn")
+	a.commandSectionFileOnly("Lspci detailed informations", "lspci", "-vvvnn")
 	a.divide()
-	a.commandSection("NVIDIA SMI detailed informations", "nvidia-smi", "-q")
+	a.commandSectionFileOnly("NVIDIA SMI detailed informations", "nvidia-smi", "-q")
+}
+
+func (a *app) header() {
+	left := []string{
+		`    __  __           ______`,
+		`    \ \/ /___ ______/ ____/`,
+		`     \  / __ ` + "`" + `/ ___/ /`,
+		`     / / /_/ / /  / /___`,
+		`    /_/\__,_/_/   \____/`,
+	}
+	right := []string{
+		"YarC get-server-info",
+		"",
+		"version : " + version,
+		"By      : YarC",
+		"",
+	}
+	const leftWidth = 36
+	border := strings.Repeat("=", leftWidth+3+30)
+	a.println(border)
+	for i := range left {
+		a.printf("%-*s | %s\n", leftWidth, left[i], right[i])
+	}
+	a.println(border)
+	a.println("")
 }
 
 func (a *app) product() {
@@ -465,6 +494,20 @@ func (a *app) commandSection(title, command string, args ...string) {
 	a.emitCommand(strings.Join(append([]string{command}, args...), " "), command, args...)
 }
 
+func (a *app) commandSectionFileOnly(title, command string, args ...string) {
+	a.section(title)
+	result := a.run(command, args...)
+	previous := a.screen
+	a.screen = false
+	a.emitResult(strings.Join(append([]string{command}, args...), " "), result)
+	a.screen = previous
+	if result.code == 0 {
+		fmt.Printf("[内容较长，%s %s 的完整输出已仅写入 TXT 文件]\n", command, strings.Join(args, " "))
+	} else {
+		fmt.Printf("[命令执行失败] %s %s (exit=%d)\n", command, strings.Join(args, " "), result.code)
+	}
+}
+
 func (a *app) emitCommand(label, command string, args ...string) {
 	a.emitResult(label, a.run(command, args...))
 }
@@ -579,9 +622,19 @@ func (a *app) table(headers []string, rows [][]string) {
 	border()
 }
 
-func (a *app) printf(format string, args ...any) { _, _ = fmt.Fprintf(a.file, format, args...) }
+func (a *app) printf(format string, args ...any) {
+	_, _ = fmt.Fprintf(a.file, format, args...)
+	if a.screen {
+		_, _ = fmt.Printf(format, args...)
+	}
+}
 
-func (a *app) println(text string) { _, _ = fmt.Fprintln(a.file, text) }
+func (a *app) println(text string) {
+	_, _ = fmt.Fprintln(a.file, text)
+	if a.screen {
+		_, _ = fmt.Fprintln(os.Stdout, text)
+	}
+}
 
 func parseMemoryRows(text string) [][]string {
 	var rows [][]string
