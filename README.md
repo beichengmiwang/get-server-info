@@ -6,7 +6,7 @@
 
 ## 版本说明
 
-- `v3.1`：新增 YarC 作者信息栏；采集结果同步显示在屏幕并写入 TXT；超长的 `lspci -vvvnn` 与 `nvidia-smi -q` 完整内容仅写入 TXT。
+- `v3.1`：新增 YarC 作者信息栏；采集结果同步显示在屏幕并写入 TXT；FRU、SEL、dmesg、`lspci -vvvnn` 与 `nvidia-smi -q` 的完整内容仅写入 TXT。
 - `v3.0`：单文件硬件巡检版本，包含格式化硬件信息、SMART 通电时长和默认 CUDA 测试。
 
 ## 采集内容
@@ -69,7 +69,7 @@ sudo ./server_inventory
 服务器序列号_YYYYMMDD_HHMMSS.txt
 ```
 
-除 `lspci -vvvnn` 和 `nvidia-smi -q` 的超长明细外，所有采集结果也会在检测完成后同步显示到屏幕；两项超长明细仍会完整保存在 TXT 报告中。
+除 FRU、SEL、dmesg、`lspci -vvvnn` 和 `nvidia-smi -q` 的明细外，所有采集结果也会在检测完成后同步显示到屏幕；这五项明细仍会完整保存在 TXT 报告中，终端仅显示完成或失败提示。
 
 常用参数：
 

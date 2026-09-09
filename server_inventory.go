@@ -176,11 +176,11 @@ func (a *app) writeReport(cudaTests bool) {
 	a.divide()
 	a.gpu(cudaTests)
 	a.divide()
-	a.commandSection("FRU informations", "ipmitool", "fru", "print")
+	a.commandSectionFileOnly("FRU informations", "ipmitool", "fru", "print")
 	a.divide()
-	a.commandSection("SEL informations", "ipmitool", "sel", "elist")
+	a.commandSectionFileOnly("SEL informations", "ipmitool", "sel", "elist")
 	a.divide()
-	a.dmesg()
+	a.dmesgFileOnly()
 	a.divide()
 	a.commandSectionFileOnly("Lspci detailed informations", "lspci", "-vvvnn")
 	a.divide()
@@ -194,8 +194,10 @@ func (a *app) header() {
 		`     \  / __ ` + "`" + `/ ___/ /`,
 		`     / / /_/ / /  / /___`,
 		`    /_/\__,_/_/   \____/`,
+		``,
 	}
 	right := []string{
+		"",
 		"YarC get-server-info",
 		"",
 		"version : " + version,
@@ -470,7 +472,7 @@ func (a *app) runCUDA(name string, args ...string) {
 	a.printf("警告: CUDA %s 未找到，跳过测试。\n", name)
 }
 
-func (a *app) dmesg() {
+func (a *app) dmesgFileOnly() {
 	a.section("Dmesg error informations")
 	r := a.run("dmesg", "--level=err,warn")
 	if r.code != 0 {
@@ -486,7 +488,15 @@ func (a *app) dmesg() {
 			r.out = strings.Join(selected, "\n")
 		}
 	}
+	previous := a.screen
+	a.screen = false
 	a.emitResult("dmesg errors", r)
+	a.screen = previous
+	if r.code == 0 {
+		fmt.Println("[内容较长，dmesg 错误信息已仅写入 TXT 文件]")
+	} else {
+		fmt.Printf("[命令执行失败] dmesg (exit=%d)\n", r.code)
+	}
 }
 
 func (a *app) commandSection(title, command string, args ...string) {
