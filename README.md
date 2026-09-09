@@ -1,93 +1,117 @@
 # get-server-info
 
+单文件 Go 语言 Linux 服务器硬件巡检工具。采集结果以格式化 ASCII 表格写入 TXT 文件，适用于普通服务器及 NVIDIA GPU 服务器。
 
+## 采集内容
 
-## Getting started
+- 厂商、型号、序列号、BIOS、BMC、操作系统和内核
+- BMC 网络配置及 FRU 信息
+- CPU 型号、插槽、核心、线程、最低/最高频率
+- 内存槽位、容量、速率、类型、厂商、料号和序列号
+- NVMe、SATA SSD、SATA HDD、SAS 设备及硬盘通电时长
+- 网卡 PCIe BDF、链路速率/宽度、固件、端口、MAC、错误和丢包计数
+- NVIDIA GPU 序列号、温度、VBIOS、ECC、PCIe 链路和理论带宽
+- NVLink 状态、CUDA bandwidthTest、CUDA p2pBandwidthLatencyTest
+- IPMI SEL、dmesg 错误、完整 `lspci -vvnn` 和 `nvidia-smi -q`
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 环境要求
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Linux amd64
+- Go 1.18 或更高版本
+- 建议使用 root 运行，以读取 DMI、SMART、IPMI 和内核日志
 
-## Add your files
+推荐安装以下系统工具：
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```text
+dmidecode  lscpu  lsblk  lspci  ethtool  ipmitool
+nvidia-smi  smartctl  nvme
 ```
-cd existing_repo
-git remote add origin http://172.9.90.250/yarc/get-server-info.git
-git branch -M main
-git push -uf origin main
+
+Ubuntu/Debian：
+
+```bash
+sudo apt update
+sudo apt install -y dmidecode pciutils util-linux ethtool ipmitool smartmontools nvme-cli
 ```
 
-## Integrate with your tools
+Rocky Linux、AlmaLinux、RHEL：
 
-* [Set up project integrations](http://172.9.90.250/yarc/get-server-info/-/settings/integrations)
+```bash
+sudo dnf install -y dmidecode pciutils util-linux ethtool ipmitool smartmontools nvme-cli
+```
 
-## Collaborate with your team
+`nvidia-smi` 由 NVIDIA 驱动提供。
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## 编译
 
-## Test and Deploy
+```bash
+git clone http://172.9.90.250:4080/yarc/get-server-info.git
+cd get-server-info
+go build -o server_inventory server_inventory.go
+```
 
-Use the built-in continuous integration in GitLab.
+## 运行
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```bash
+sudo ./server_inventory
+```
 
-***
+检测结果保存在当前目录，文件名格式为：
 
-# Editing this README
+```text
+服务器序列号_YYYYMMDD_HHMMSS.txt
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+常用参数：
 
-## Suggestions for a good README
+```bash
+# 指定输出目录
+sudo ./server_inventory -output /root/server-reports
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# 手动指定服务器序列号
+sudo ./server_inventory -serial SERVER-SN
 
-## Name
-Choose a self-explaining name for your project.
+# 修改普通命令的超时时间
+sudo ./server_inventory -timeout 60s
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## CUDA 测试
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+CUDA 测试默认启用，依次执行：
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+1. `nvidia-smi nvlink -s`
+2. `bandwidthTest --mode=quick`
+3. `p2pBandwidthLatencyTest`
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+程序会在以下位置查找 CUDA Sample：
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```text
+/root/cuda-samples-master/Samples/1_Utilities/bandwidthTest/bandwidthTest
+/root/cuda-samples-master/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest
+/usr/local/cuda/extras/demo_suite/
+/usr/local/cuda/samples/bin/x86_64/linux/release/
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+维护期间如需跳过带宽和 P2P 压力测试：
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+sudo ./server_inventory -cuda-tests=false
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+NVLink 状态仍会采集；不支持 NVLink 的 GPU 会在报告中明确标注。
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## 硬盘通电时长
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+程序优先使用 `smartctl -a /dev/设备名` 读取 SATA、SAS 和 NVMe 硬盘的通电时长。NVMe 无法通过 `smartctl` 读取时，会回退到：
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```bash
+nvme smart-log /dev/nvmeXn1
+```
 
-## License
-For open source projects, say how it is licensed.
+硬件、控制器或工具无法提供该字段时，报告显示 `N/A`。
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## 注意事项
+
+- CUDA bandwidth 和 P2P 测试会短暂占用 GPU，请在允许产生测试负载时运行。
+- 部分 RAID/HBA 控制器不透传 SMART，可能需要控制器专用参数或管理工具。
+- 表格较宽，建议使用等宽字体并在宽终端或文本编辑器中查看 TXT 报告。
