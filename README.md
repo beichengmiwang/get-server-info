@@ -2,10 +2,11 @@
 
 单文件 Go 语言 Linux 服务器硬件巡检工具。采集结果以格式化 ASCII 表格写入 TXT 文件，适用于普通服务器及 NVIDIA GPU 服务器。
 
-当前版本：`v3.1`
+当前版本：`v3.2`
 
 ## 版本说明
 
+- `v3.2`：新增 IPMI 传感器信息采集，执行 `ipmitool sdr list`。
 - `v3.1`：新增 YarC 作者信息栏；采集结果同步显示在屏幕并写入 TXT；FRU、SEL、dmesg、`lspci -vvvnn` 与 `nvidia-smi -q` 的完整内容仅写入 TXT。
 - `v3.0`：单文件硬件巡检版本，包含格式化硬件信息、SMART 通电时长和默认 CUDA 测试。
 
@@ -19,7 +20,7 @@
 - 网卡 PCIe BDF、链路速率/宽度、固件、端口、MAC、错误和丢包计数
 - NVIDIA GPU 序列号、温度、VBIOS、ECC、PCIe 链路和理论带宽
 - NVLink 状态、CUDA bandwidthTest、CUDA p2pBandwidthLatencyTest
-- IPMI SEL、dmesg 错误、完整 `lspci -vvvnn` 和 `nvidia-smi -q`
+- IPMI SEL、传感器读数、dmesg 错误、完整 `lspci -vvvnn` 和 `nvidia-smi -q`
 
 ## 环境要求
 

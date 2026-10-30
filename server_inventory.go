@@ -24,7 +24,7 @@ import (
 
 const (
 	line    = "----------------------------------------------------------------------------------------------------------------------------------"
-	version = "v3.1"
+	version = "v3.2"
 )
 
 type result struct {
@@ -179,6 +179,8 @@ func (a *app) writeReport(cudaTests bool) {
 	a.commandSectionFileOnly("FRU informations", "ipmitool", "fru", "print")
 	a.divide()
 	a.commandSectionFileOnly("SEL informations", "ipmitool", "sel", "elist")
+	a.divide()
+	a.commandSectionFileOnly("Sensor informations", "ipmitool", "sdr", "list")
 	a.divide()
 	a.dmesgFileOnly()
 	a.divide()
